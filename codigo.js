@@ -1,4 +1,93 @@
 (function() {
+
+    // ========== REGISTRO DE USUARIO ==========
+    const btnAbrirRegistro = document.getElementById('btnAbrirRegistro');
+    const modalRegistro = document.getElementById('modalRegistro');
+    const btnCerrarModal = document.getElementById('btnCerrarModal');
+    const formRegistro = document.getElementById('formRegistro');
+    const mensajeRegistro = document.getElementById('mensajeRegistro');
+
+    // Abrir modal
+    if (btnAbrirRegistro) {
+        btnAbrirRegistro.addEventListener('click', () => {
+            modalRegistro.classList.add('activo');
+        });
+    }
+
+    // Cerrar modal
+    if (btnCerrarModal) {
+        btnCerrarModal.addEventListener('click', () => {
+            modalRegistro.classList.remove('activo');
+            mensajeRegistro.textContent = '';
+            mensajeRegistro.className = 'form-mensaje';
+            formRegistro.reset();
+        });
+    }
+
+    // Cerrar al hacer clic fuera del contenido
+    window.addEventListener('click', (e) => {
+        if (e.target === modalRegistro) {
+            modalRegistro.classList.remove('activo');
+            mensajeRegistro.textContent = '';
+            mensajeRegistro.className = 'form-mensaje';
+            formRegistro.reset();
+        }
+    });
+
+    // Manejar envío del formulario
+    if (formRegistro) {
+        formRegistro.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const camposRequeridos = formRegistro.querySelectorAll('[required]');
+            let valido = true;
+            camposRequeridos.forEach(campo => {
+                if (!campo.value.trim()) {
+                    valido = false;
+                    campo.style.borderColor = '#f44336';
+                } else {
+                    campo.style.borderColor = '#444';
+                }
+            });
+
+            if (!valido) {
+                mensajeRegistro.textContent = 'Por favor completa todos los campos obligatorios (*)';
+                mensajeRegistro.className = 'form-mensaje error';
+                return;
+            }
+
+            const datosUsuario = {
+                nombre: document.getElementById('nombre').value,
+                apellido: document.getElementById('apellido').value,
+                email: document.getElementById('email').value,
+                telefono: document.getElementById('telefono').value,
+                password: document.getElementById('password').value,
+                vehiculo: {
+                    marca: document.getElementById('marca').value,
+                    modelo: document.getElementById('modelo').value,
+                    anio: document.getElementById('anio').value,
+                    patente: document.getElementById('patente').value,
+                    tipo_neumatico: document.getElementById('tipo_neumatico').value
+                },
+                fechaRegistro: new Date().toISOString()
+            };
+
+            const usuarios = JSON.parse(localStorage.getItem('usuariosVulcanizadora') || '[]');
+            usuarios.push(datosUsuario);
+            localStorage.setItem('usuariosVulcanizadora', JSON.stringify(usuarios));
+
+            mensajeRegistro.textContent = '¡Cuenta creada con éxito! Bienvenido/a ' + datosUsuario.nombre;
+            mensajeRegistro.className = 'form-mensaje exito';
+
+            setTimeout(() => {
+                modalRegistro.classList.remove('activo');
+                formRegistro.reset();
+                mensajeRegistro.textContent = '';
+                mensajeRegistro.className = 'form-mensaje';
+            }, 2000);
+        });
+    }
+
     // ========== DATOS DE CATEGORÍAS ==========
     const categorias = [
         {
@@ -82,29 +171,23 @@
             btn.textContent = cat.nombre;
             btn.dataset.categoriaId = cat.id;
             btn.addEventListener('click', () => mostrarCategoria(cat.id, btn));
-            if (index === 0) btn.classList.add('activo'); // Opcional
+            if (index === 0) btn.classList.add('activo');
             navCategorias.appendChild(btn);
         });
     }
 
     // ========== MOSTRAR CATEGORÍA SELECCIONADA ==========
     function mostrarCategoria(categoriaId, botonClickeado) {
-        // Ocultar bienvenida
         if (bienvenida) bienvenida.style.display = 'none';
-
-        // Marcar botón activo
         document.querySelectorAll('.btn-categoria').forEach(b => b.classList.remove('activo'));
         if (botonClickeado) botonClickeado.classList.add('activo');
 
-        // Buscar datos de la categoría
         const categoria = categorias.find(c => c.id === categoriaId);
         if (!categoria) return;
 
-        // Eliminar contenido anterior de categoría
         const contenidoPrevio = contenidoPrincipal.querySelectorAll('.categoria-titulo, .categoria-descripcion, .grid-tarjetas');
         contenidoPrevio.forEach(el => el.remove());
 
-        // Construir HTML nuevo
         const nuevoHTML = `
             <h2 class="categoria-titulo">${categoria.nombre}</h2>
             <p class="categoria-descripcion">${categoria.descripcion}</p>
@@ -128,26 +211,16 @@
             </div>
         `;
 
-        // Insertar antes del div de bienvenida (que sigue oculto)
         contenidoPrincipal.insertAdjacentHTML('afterbegin', nuevoHTML);
-
-        // Scroll suave
         contenidoPrincipal.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     // ========== VOLVER AL INICIO ==========
     function volverAlInicio() {
-        // Eliminar contenido de categorías
         const elementosCategoria = contenidoPrincipal.querySelectorAll('.categoria-titulo, .categoria-descripcion, .grid-tarjetas');
         elementosCategoria.forEach(el => el.remove());
-
-        // Mostrar bienvenida
         if (bienvenida) bienvenida.style.display = '';
-
-        // Desmarcar botones
         document.querySelectorAll('.btn-categoria').forEach(b => b.classList.remove('activo'));
-
-        // Scroll al principio
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -163,9 +236,6 @@
     // ========== INICIALIZAR ==========
     function inicializar() {
         generarBotones();
-        // Si quieres que la primera categoría se muestre automáticamente, descomenta:
-        // const primerBtn = navCategorias.querySelector('.btn-categoria');
-        // if (primerBtn) primerBtn.click();
     }
 
     if (document.readyState === 'loading') {
