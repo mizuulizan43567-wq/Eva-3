@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- ==================== HEADER UNIFICADO ==================== -->
+    <!-- ==================== HEADER UNIFICADO CON BOTONES ==================== -->
     <header class="header" id="inicio">
         <a class="logo-link" href="#inicio" title="Volver al inicio">
             <div class="logo-icono" aria-hidden="true">⚙</div>
@@ -16,10 +16,13 @@
                 <span>Profesionales · Desde 1998</span>
             </div>
         </a>
-        <button class="btn-cuenta" id="btnAbrirRegistro">Crear cuenta</button>
+        <div class="header-buttons">
+            <button class="btn-cuenta" id="btnAbrirRegistro">Crear cuenta</button>
+            <button class="btn-ver-usuarios" id="btnVerUsuarios">Ver usuarios</button>
+        </div>
     </header>
 
-    <!-- MODAL DE REGISTRO -->
+    <!-- MODAL DE REGISTRO (con confirmación de contraseña y espacios para errores) -->
     <div class="modal-overlay" id="modalRegistro">
         <div class="modal-contenido">
             <button class="modal-cerrar" id="btnCerrarModal">&times;</button>
@@ -30,22 +33,32 @@
                     <div class="campo">
                         <label for="nombre">Nombre *</label>
                         <input type="text" id="nombre" name="nombre" required placeholder="Tu nombre">
+                        <span class="error-msg" id="error-nombre"></span>
                     </div>
                     <div class="campo">
                         <label for="apellido">Apellido *</label>
                         <input type="text" id="apellido" name="apellido" required placeholder="Tu apellido">
+                        <span class="error-msg" id="error-apellido"></span>
                     </div>
                     <div class="campo">
                         <label for="email">Correo electrónico *</label>
                         <input type="email" id="email" name="email" required placeholder="correo@ejemplo.com">
+                        <span class="error-msg" id="error-email"></span>
                     </div>
                     <div class="campo">
-                        <label for="telefono">Teléfono</label>
-                        <input type="tel" id="telefono" name="telefono" placeholder="+56 9 ...">
+                        <label for="telefono">Teléfono *</label>
+                        <input type="tel" id="telefono" name="telefono" required placeholder="+56 9 1234 5678">
+                        <span class="error-msg" id="error-telefono"></span>
                     </div>
                     <div class="campo">
                         <label for="password">Contraseña *</label>
                         <input type="password" id="password" name="password" required minlength="6" placeholder="Mínimo 6 caracteres">
+                        <span class="error-msg" id="error-password"></span>
+                    </div>
+                    <div class="campo">
+                        <label for="confirmar_password">Confirmar contraseña *</label>
+                        <input type="password" id="confirmar_password" name="confirmar_password" required placeholder="Repite la contraseña">
+                        <span class="error-msg" id="error-confirmar"></span>
                     </div>
                 </fieldset>
                 <fieldset>
@@ -53,18 +66,22 @@
                     <div class="campo">
                         <label for="marca">Marca *</label>
                         <input type="text" id="marca" name="marca" required placeholder="Ej: Toyota">
+                        <span class="error-msg" id="error-marca"></span>
                     </div>
                     <div class="campo">
                         <label for="modelo">Modelo *</label>
                         <input type="text" id="modelo" name="modelo" required placeholder="Ej: Corolla">
+                        <span class="error-msg" id="error-modelo"></span>
                     </div>
                     <div class="campo">
-                        <label for="anio">Año</label>
-                        <input type="number" id="anio" name="anio" min="1990" max="2026" placeholder="2020">
+                        <label for="anio">Año *</label>
+                        <input type="number" id="anio" name="anio" required min="1900" max="2026" placeholder="2020">
+                        <span class="error-msg" id="error-anio"></span>
                     </div>
                     <div class="campo">
-                        <label for="patente">Patente</label>
-                        <input type="text" id="patente" name="patente" placeholder="ABCD12">
+                        <label for="patente">Patente (formato chileno)</label>
+                        <input type="text" id="patente" name="patente" placeholder="ABCD12 o AB12CD">
+                        <span class="error-msg" id="error-patente"></span>
                     </div>
                     <div class="campo">
                         <label for="tipo_neumatico">Tipo de neumático preferido</label>
@@ -78,8 +95,17 @@
                     </div>
                 </fieldset>
                 <button type="submit" class="btn-enviar">Registrarme</button>
-                <p class="form-mensaje" id="mensajeRegistro"></p>
+                <div class="form-mensaje" id="mensajeRegistro"></div>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL PARA VER USUARIOS (nuevo) -->
+    <div class="modal-overlay" id="modalUsuarios">
+        <div class="modal-contenido modal-grande">
+            <button class="modal-cerrar" id="btnCerrarModalUsuarios">&times;</button>
+            <h2>Usuarios registrados</h2>
+            <div id="listaUsuarios"></div>
         </div>
     </div>
 

@@ -1,94 +1,47 @@
 (function() {
-
-    // ========== REGISTRO DE USUARIO ==========
-    const btnAbrirRegistro = document.getElementById('btnAbrirRegistro');
-    const modalRegistro = document.getElementById('modalRegistro');
-    const btnCerrarModal = document.getElementById('btnCerrarModal');
-    const formRegistro = document.getElementById('formRegistro');
-    const mensajeRegistro = document.getElementById('mensajeRegistro');
-
-    // Abrir modal
-    if (btnAbrirRegistro) {
-        btnAbrirRegistro.addEventListener('click', () => {
-            modalRegistro.classList.add('activo');
+    // ==================== SEGURIDAD Y VALIDACIONES ====================
+    
+    // Sanitización para evitar XSS
+    function sanitizar(texto) {
+        if (!texto) return '';
+        return texto.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
         });
     }
-
-    // Cerrar modal
-    if (btnCerrarModal) {
-        btnCerrarModal.addEventListener('click', () => {
-            modalRegistro.classList.remove('activo');
-            mensajeRegistro.textContent = '';
-            mensajeRegistro.className = 'form-mensaje';
-            formRegistro.reset();
-        });
+    
+    // Validación de email
+    function validarEmail(email) {
+        const re = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
+        return re.test(email);
     }
-
-    // Cerrar al hacer clic fuera del contenido
-    window.addEventListener('click', (e) => {
-        if (e.target === modalRegistro) {
-            modalRegistro.classList.remove('activo');
-            mensajeRegistro.textContent = '';
-            mensajeRegistro.className = 'form-mensaje';
-            formRegistro.reset();
+    
+    // Validación de teléfono chileno (formato +56 9 xxxx xxxx o 9 xxxx xxxx)
+    function validarTelefono(tel) {
+        const re = /^(\+56\s?)?9\s?\d{4}\s?\d{4}$/;
+        return re.test(tel);
+    }
+    
+    // Validación de patente chilena (antigua ABCD12 o nueva AB12CD)
+    function validarPatente(patente) {
+        if (!patente) return true; // opcional
+        const re = /^[A-Za-z]{4}\d{2}$|^[A-Za-z]{2}\d{4}$/;
+        return re.test(patente);
+    }
+    
+    // Hash simple de contraseña (solo para simulación, NUNCA usar en producción real)
+    function hashPassword(pwd) {
+        let hash = 0;
+        for (let i = 0; i < pwd.length; i++) {
+            hash = ((hash << 5) - hash) + pwd.charCodeAt(i);
+            hash |= 0;
         }
-    });
-
-    // Manejar envío del formulario
-    if (formRegistro) {
-        formRegistro.addEventListener('submit', (e) => {
-            e.preventDefault();
-
-            const camposRequeridos = formRegistro.querySelectorAll('[required]');
-            let valido = true;
-            camposRequeridos.forEach(campo => {
-                if (!campo.value.trim()) {
-                    valido = false;
-                    campo.style.borderColor = '#f44336';
-                } else {
-                    campo.style.borderColor = '#444';
-                }
-            });
-
-            if (!valido) {
-                mensajeRegistro.textContent = 'Por favor completa todos los campos obligatorios (*)';
-                mensajeRegistro.className = 'form-mensaje error';
-                return;
-            }
-
-            const datosUsuario = {
-                nombre: document.getElementById('nombre').value,
-                apellido: document.getElementById('apellido').value,
-                email: document.getElementById('email').value,
-                telefono: document.getElementById('telefono').value,
-                password: document.getElementById('password').value,
-                vehiculo: {
-                    marca: document.getElementById('marca').value,
-                    modelo: document.getElementById('modelo').value,
-                    anio: document.getElementById('anio').value,
-                    patente: document.getElementById('patente').value,
-                    tipo_neumatico: document.getElementById('tipo_neumatico').value
-                },
-                fechaRegistro: new Date().toISOString()
-            };
-
-            const usuarios = JSON.parse(localStorage.getItem('usuariosVulcanizadora') || '[]');
-            usuarios.push(datosUsuario);
-            localStorage.setItem('usuariosVulcanizadora', JSON.stringify(usuarios));
-
-            mensajeRegistro.textContent = '¡Cuenta creada con éxito! Bienvenido/a ' + datosUsuario.nombre;
-            mensajeRegistro.className = 'form-mensaje exito';
-
-            setTimeout(() => {
-                modalRegistro.classList.remove('activo');
-                formRegistro.reset();
-                mensajeRegistro.textContent = '';
-                mensajeRegistro.className = 'form-mensaje';
-            }, 2000);
-        });
+        return hash.toString();
     }
-
-    // ========== DATOS DE CATEGORÍAS ==========
+    
+    // ==================== DATOS DE CATEGORÍAS (mismos que antes) ====================
     const categorias = [
         {
             id: 'neumaticos',
@@ -156,88 +109,284 @@
             ]
         }
     ];
-
-    // ========== ELEMENTOS DEL DOM ==========
-    const navCategorias = document.getElementById('navCategorias');
-    const contenidoPrincipal = document.getElementById('contenidoPrincipal');
-    const bienvenida = document.getElementById('bienvenida');
-
-    // ========== GENERAR BOTONES DE CATEGORÍA ==========
+    
+    // ==================== ELEMENTOS DEL DOM ====================
+    let btnAbrirRegistro, modalRegistro, btnCerrarModal, formRegistro, mensajeRegistro;
+    let btnVerUsuarios, modalUsuarios, btnCerrarModalUsuarios, listaUsuarios;
+    let navCategorias, contenidoPrincipal, bienvenida;
+    
+    // ==================== FUNCIONES AUXILIARES ====================
+    function limpiarErroresFormulario() {
+        document.querySelectorAll('.error-msg').forEach(el => el.textContent = '');
+        document.querySelectorAll('.error-input').forEach(el => el.classList.remove('error-input'));
+    }
+    
+    function mostrarError(campoId, mensaje) {
+        const errorSpan = document.getElementById(`error-${campoId}`);
+        if (errorSpan) errorSpan.textContent = mensaje;
+        const campo = document.getElementById(campoId);
+        if (campo) campo.classList.add('error-input');
+    }
+    
+    function cerrarModalRegistro() {
+        if (modalRegistro) modalRegistro.classList.remove('activo');
+        if (formRegistro) formRegistro.reset();
+        limpiarErroresFormulario();
+        if (mensajeRegistro) {
+            mensajeRegistro.textContent = '';
+            mensajeRegistro.className = 'form-mensaje';
+        }
+    }
+    
+    function cerrarModalUsuarios() {
+        if (modalUsuarios) modalUsuarios.classList.remove('activo');
+    }
+    
+    // ==================== RENDERIZADO DE TARJETAS (SEGURO, SIN INNERHTML) ====================
+    function renderizarTarjetas(categoria) {
+        // Eliminar contenido anterior de categorías
+        const anteriores = contenidoPrincipal.querySelectorAll('.categoria-titulo, .categoria-descripcion, .grid-tarjetas');
+        anteriores.forEach(el => el.remove());
+        
+        // Crear título
+        const titulo = document.createElement('h2');
+        titulo.className = 'categoria-titulo';
+        titulo.textContent = categoria.nombre;
+        
+        // Crear descripción
+        const descripcion = document.createElement('p');
+        descripcion.className = 'categoria-descripcion';
+        descripcion.textContent = categoria.descripcion;
+        
+        // Crear grid
+        const grid = document.createElement('div');
+        grid.className = 'grid-tarjetas';
+        
+        // Recorrer items y crear cada tarjeta con createElement
+        categoria.items.forEach(item => {
+            const tarjeta = document.createElement('article');
+            tarjeta.className = 'tarjeta';
+            
+            const img = document.createElement('img');
+            img.className = 'tarjeta-imagen';
+            img.src = item.imagen;
+            img.alt = sanitizar(item.titulo);
+            img.loading = 'lazy';
+            img.onerror = () => { img.style.display = 'none'; };
+            
+            const cuerpo = document.createElement('div');
+            cuerpo.className = 'tarjeta-cuerpo';
+            
+            const h3 = document.createElement('h3');
+            h3.textContent = sanitizar(item.titulo);
+            
+            const p = document.createElement('p');
+            p.textContent = sanitizar(item.descripcion);
+            
+            const precio = document.createElement('span');
+            precio.className = 'tarjeta-precio';
+            precio.textContent = item.precio;
+            
+            cuerpo.appendChild(h3);
+            cuerpo.appendChild(p);
+            cuerpo.appendChild(precio);
+            tarjeta.appendChild(img);
+            tarjeta.appendChild(cuerpo);
+            grid.appendChild(tarjeta);
+        });
+        
+        // Insertar antes de la bienvenida
+        contenidoPrincipal.insertBefore(titulo, bienvenida);
+        contenidoPrincipal.insertBefore(descripcion, bienvenida);
+        contenidoPrincipal.insertBefore(grid, bienvenida);
+        
+        // Ocultar bienvenida
+        bienvenida.style.display = 'none';
+    }
+    
+    // ==================== GENERAR BOTONES DE CATEGORÍAS ====================
     function generarBotones() {
+        if (!navCategorias) return;
         navCategorias.innerHTML = '';
-        categorias.forEach((cat, index) => {
+        categorias.forEach(cat => {
             const btn = document.createElement('button');
             btn.className = 'btn-categoria';
             btn.textContent = cat.nombre;
-            btn.dataset.categoriaId = cat.id;
-            btn.addEventListener('click', () => mostrarCategoria(cat.id, btn));
-            if (index === 0) btn.classList.add('activo');
+            btn.dataset.id = cat.id;
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.btn-categoria').forEach(b => b.classList.remove('activo'));
+                btn.classList.add('activo');
+                renderizarTarjetas(cat);
+            });
             navCategorias.appendChild(btn);
         });
     }
-
-    // ========== MOSTRAR CATEGORÍA SELECCIONADA ==========
-    function mostrarCategoria(categoriaId, botonClickeado) {
-        if (bienvenida) bienvenida.style.display = 'none';
-        document.querySelectorAll('.btn-categoria').forEach(b => b.classList.remove('activo'));
-        if (botonClickeado) botonClickeado.classList.add('activo');
-
-        const categoria = categorias.find(c => c.id === categoriaId);
-        if (!categoria) return;
-
-        const contenidoPrevio = contenidoPrincipal.querySelectorAll('.categoria-titulo, .categoria-descripcion, .grid-tarjetas');
-        contenidoPrevio.forEach(el => el.remove());
-
-        const nuevoHTML = `
-            <h2 class="categoria-titulo">${categoria.nombre}</h2>
-            <p class="categoria-descripcion">${categoria.descripcion}</p>
-            <div class="grid-tarjetas">
-                ${categoria.items.map(item => `
-                    <article class="tarjeta">
-                        <img 
-                            src="${item.imagen}" 
-                            alt="${item.titulo}" 
-                            class="tarjeta-imagen" 
-                            loading="lazy"
-                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
-                        >
-                        <div class="tarjeta-cuerpo">
-                            <h3>${item.titulo}</h3>
-                            <p>${item.descripcion}</p>
-                            <span class="tarjeta-precio">${item.precio}</span>
-                        </div>
-                    </article>
-                `).join('')}
-            </div>
-        `;
-
-        contenidoPrincipal.insertAdjacentHTML('afterbegin', nuevoHTML);
-        contenidoPrincipal.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-
-    // ========== VOLVER AL INICIO ==========
+    
+    // ==================== VOLVER AL INICIO ====================
     function volverAlInicio() {
         const elementosCategoria = contenidoPrincipal.querySelectorAll('.categoria-titulo, .categoria-descripcion, .grid-tarjetas');
         elementosCategoria.forEach(el => el.remove());
-        if (bienvenida) bienvenida.style.display = '';
+        bienvenida.style.display = '';
         document.querySelectorAll('.btn-categoria').forEach(b => b.classList.remove('activo'));
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-
-    // ========== EVENTO CLICK EN LOGO ==========
-    const logoLink = document.querySelector('.logo-link');
-    if (logoLink) {
-        logoLink.addEventListener('click', (e) => {
+    
+    // ==================== REGISTRO DE USUARIO CON VALIDACIONES ====================
+    function manejarRegistro(e) {
+        e.preventDefault();
+        limpiarErroresFormulario();
+        let valido = true;
+        
+        // Obtener valores y sanitizar
+        const nombre = sanitizar(document.getElementById('nombre').value.trim());
+        const apellido = sanitizar(document.getElementById('apellido').value.trim());
+        const email = document.getElementById('email').value.trim();
+        const telefono = document.getElementById('telefono').value.trim();
+        const password = document.getElementById('password').value;
+        const confirmar = document.getElementById('confirmar_password').value;
+        const marca = sanitizar(document.getElementById('marca').value.trim());
+        const modelo = sanitizar(document.getElementById('modelo').value.trim());
+        const anio = document.getElementById('anio').value;
+        const patente = sanitizar(document.getElementById('patente').value.trim().toUpperCase());
+        const tipo_neumatico = document.getElementById('tipo_neumatico').value;
+        
+        // Validaciones campo por campo
+        if (!nombre) { mostrarError('nombre', 'El nombre es obligatorio'); valido = false; }
+        if (!apellido) { mostrarError('apellido', 'El apellido es obligatorio'); valido = false; }
+        
+        if (!email) { mostrarError('email', 'El email es obligatorio'); valido = false; }
+        else if (!validarEmail(email)) { mostrarError('email', 'Email inválido (ej: nombre@dominio.com)'); valido = false; }
+        
+        if (!telefono) { mostrarError('telefono', 'El teléfono es obligatorio'); valido = false; }
+        else if (!validarTelefono(telefono)) { mostrarError('telefono', 'Formato: +56 9 1234 5678 o 9 1234 5678'); valido = false; }
+        
+        if (!password) { mostrarError('password', 'La contraseña es obligatoria'); valido = false; }
+        else if (password.length < 6) { mostrarError('password', 'Mínimo 6 caracteres'); valido = false; }
+        
+        if (!confirmar) { mostrarError('confirmar', 'Confirma tu contraseña'); valido = false; }
+        else if (password !== confirmar) { mostrarError('confirmar', 'Las contraseñas no coinciden'); valido = false; }
+        
+        if (!marca) { mostrarError('marca', 'La marca es obligatoria'); valido = false; }
+        if (!modelo) { mostrarError('modelo', 'El modelo es obligatorio'); valido = false; }
+        if (!anio) { mostrarError('anio', 'El año es obligatorio'); valido = false; }
+        else if (anio < 1900 || anio > 2026) { mostrarError('anio', 'Año entre 1900 y 2026'); valido = false; }
+        
+        if (patente && !validarPatente(patente)) { mostrarError('patente', 'Formato: ABCD12 o AB12CD'); valido = false; }
+        
+        if (!valido) {
+            mensajeRegistro.textContent = 'Corrige los errores en el formulario';
+            mensajeRegistro.className = 'form-mensaje error';
+            return;
+        }
+        
+        // Verificar si el email ya existe
+        const usuariosGuardados = JSON.parse(localStorage.getItem('usuariosVulcanizadora') || '[]');
+        if (usuariosGuardados.some(u => u.email === email)) {
+            mensajeRegistro.textContent = 'Este correo electrónico ya está registrado';
+            mensajeRegistro.className = 'form-mensaje error';
+            return;
+        }
+        
+        // Crear objeto usuario (contraseña hasheada)
+        const nuevoUsuario = {
+            id: Date.now(),
+            nombre,
+            apellido,
+            email,
+            telefono,
+            passwordHash: hashPassword(password),
+            vehiculo: { marca, modelo, anio, patente, tipo_neumatico },
+            fechaRegistro: new Date().toISOString()
+        };
+        
+        usuariosGuardados.push(nuevoUsuario);
+        localStorage.setItem('usuariosVulcanizadora', JSON.stringify(usuariosGuardados));
+        
+        // Éxito
+        mensajeRegistro.textContent = `¡Cuenta creada con éxito! Bienvenido/a ${nombre}`;
+        mensajeRegistro.className = 'form-mensaje exito';
+        
+        setTimeout(() => {
+            cerrarModalRegistro();
+        }, 2000);
+    }
+    
+    // ==================== MOSTRAR LISTA DE USUARIOS (MODAL) ====================
+    function mostrarListaUsuarios() {
+        const usuarios = JSON.parse(localStorage.getItem('usuariosVulcanizadora') || '[]');
+        if (!listaUsuarios) return;
+        
+        listaUsuarios.innerHTML = '';
+        
+        if (usuarios.length === 0) {
+            listaUsuarios.textContent = 'No hay usuarios registrados aún.';
+            modalUsuarios.classList.add('activo');
+            return;
+        }
+        
+        const contenedor = document.createElement('div');
+        contenedor.className = 'lista-usuarios-container';
+        
+        usuarios.forEach(u => {
+            const card = document.createElement('div');
+            card.className = 'usuario-card';
+            // Usamos innerHTML solo aquí porque los datos ya están sanitizados al guardarse
+            // Además, el contenido es interno y no hay riesgo de XSS gracias a sanitizar
+            card.innerHTML = `
+                <p><strong>${sanitizar(u.nombre)} ${sanitizar(u.apellido)}</strong> (${sanitizar(u.email)})</p>
+                <p>📞 ${sanitizar(u.telefono)} | 🚗 ${sanitizar(u.vehiculo.marca)} ${sanitizar(u.vehiculo.modelo)} (${u.vehiculo.anio})</p>
+                <p>📅 ${new Date(u.fechaRegistro).toLocaleDateString()}</p>
+            `;
+            contenedor.appendChild(card);
+        });
+        
+        listaUsuarios.appendChild(contenedor);
+        modalUsuarios.classList.add('activo');
+    }
+    
+    // ==================== INICIALIZACIÓN ====================
+    function inicializar() {
+        // Obtener elementos del DOM
+        btnAbrirRegistro = document.getElementById('btnAbrirRegistro');
+        modalRegistro = document.getElementById('modalRegistro');
+        btnCerrarModal = document.getElementById('btnCerrarModal');
+        formRegistro = document.getElementById('formRegistro');
+        mensajeRegistro = document.getElementById('mensajeRegistro');
+        btnVerUsuarios = document.getElementById('btnVerUsuarios');
+        modalUsuarios = document.getElementById('modalUsuarios');
+        btnCerrarModalUsuarios = document.getElementById('btnCerrarModalUsuarios');
+        listaUsuarios = document.getElementById('listaUsuarios');
+        navCategorias = document.getElementById('navCategorias');
+        contenidoPrincipal = document.getElementById('contenidoPrincipal');
+        bienvenida = document.getElementById('bienvenida');
+        
+        // Eventos de modales
+        if (btnAbrirRegistro) btnAbrirRegistro.addEventListener('click', () => modalRegistro.classList.add('activo'));
+        if (btnCerrarModal) btnCerrarModal.addEventListener('click', cerrarModalRegistro);
+        if (btnVerUsuarios) btnVerUsuarios.addEventListener('click', mostrarListaUsuarios);
+        if (btnCerrarModalUsuarios) btnCerrarModalUsuarios.addEventListener('click', cerrarModalUsuarios);
+        
+        // Cerrar modales al hacer clic fuera del contenido
+        window.addEventListener('click', (e) => {
+            if (e.target === modalRegistro) cerrarModalRegistro();
+            if (e.target === modalUsuarios) cerrarModalUsuarios();
+        });
+        
+        // Envío del formulario
+        if (formRegistro) formRegistro.addEventListener('submit', manejarRegistro);
+        
+        // Click en el logo para volver al inicio
+        const logoLink = document.querySelector('.logo-link');
+        if (logoLink) logoLink.addEventListener('click', (e) => {
             e.preventDefault();
             volverAlInicio();
         });
-    }
-
-    // ========== INICIALIZAR ==========
-    function inicializar() {
+        
+        // Generar botones de categorías
         generarBotones();
     }
-
+    
+    // Iniciar cuando el DOM esté listo
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', inicializar);
     } else {

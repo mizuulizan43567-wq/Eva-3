@@ -35,7 +35,7 @@ body {
     padding: 1.2rem 2rem;
     display: flex;
     align-items: center;
-    justify-content: space-between;  /* ← Cambiado de 'center' a 'space-between' */
+    justify-content: space-between;
     flex-wrap: wrap;
     gap: 1rem;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
@@ -44,9 +44,15 @@ body {
     z-index: 100;
 }
 
-/* ========== BOTÓN CREAR CUENTA ========== */
+/* Contenedor de botones del header */
+.header-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+/* ========== BOTONES DEL HEADER ========== */
 .btn-cuenta {
-    /* margin-left: auto;  ← Eliminado, ahora se alinea con space-between */
     background-color: var(--naranja);
     color: #fff;
     border: none;
@@ -64,7 +70,26 @@ body {
     transform: translateY(-2px);
 }
 
-/* ========== MODAL OVERLAY (sin cambios) ========== */
+/* Botón "Ver usuarios" (mismo estilo pero color verde para diferenciar) */
+.btn-ver-usuarios {
+    background-color: #2c5f2d;
+    color: #fff;
+    border: none;
+    padding: 0.7rem 1.8rem;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background var(--transicion), transform var(--transicion);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.btn-ver-usuarios:hover {
+    background-color: #1e3a1e;
+    transform: translateY(-2px);
+}
+
+/* ========== MODAL OVERLAY ========== */
 .modal-overlay {
     display: none;
     position: fixed;
@@ -95,6 +120,11 @@ body {
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
     animation: modalEntrada 0.3s ease-out;
 }
+/* Modal más grande para la lista de usuarios */
+.modal-grande {
+    max-width: 800px;
+}
+
 @keyframes modalEntrada {
     from { opacity: 0; transform: scale(0.9); }
     to { opacity: 1; transform: scale(1); }
@@ -162,6 +192,20 @@ legend {
     outline: none;
     border-color: var(--naranja);
     box-shadow: 0 0 0 3px rgba(241, 90, 36, 0.2);
+}
+
+/* Estilo para campos con error */
+.campo input.error-input,
+.campo select.error-input {
+    border-color: #f44336;
+}
+
+/* Mensajes de error individuales */
+.error-msg {
+    display: block;
+    color: #f44336;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
 }
 
 .btn-enviar {
@@ -417,6 +461,28 @@ legend {
     margin-top: auto;
 }
 
+/* ========== LISTA DE USUARIOS (modal) ========== */
+.lista-usuarios-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+.usuario-card {
+    background-color: #2a2a2a;
+    padding: 1rem;
+    border-radius: 12px;
+    border-left: 4px solid var(--naranja);
+}
+.usuario-card p {
+    margin: 0.3rem 0;
+    font-size: 0.9rem;
+    color: #ddd;
+}
+.usuario-card strong {
+    color: #fff;
+}
+
 /* ========== RESPONSIVE ========== */
 @media (max-width: 768px) {
     .header {
@@ -453,7 +519,12 @@ legend {
     .logo-link {
         justify-content: center;
     }
-    .btn-cuenta {
+    .header-buttons {
+        justify-content: center;
+        flex-direction: column;
+        width: 100%;
+    }
+    .btn-cuenta, .btn-ver-usuarios {
         width: 100%;
         margin-top: 0.5rem;
     }
@@ -465,5 +536,9 @@ legend {
         padding: 0.4rem 0.8rem;
         font-size: 0.72rem;
         letter-spacing: 0;
+    }
+    .modal-grande {
+        max-width: 95%;
+        padding: 1rem;
     }
 }
