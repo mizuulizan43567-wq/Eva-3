@@ -70,5 +70,3 @@ Genera tres archivos:
 - Asegúrate de que no haya errores de sintaxis y que funcione en un navegador moderno.
 
 **Importante:** El diseño original debe mantenerse casi intacto (colores, fuentes, bordes, sombras, animaciones). Solo agrega los elementos nuevos (botón "Ver usuarios", mensajes de error, modal de lista) sin alterar el aspecto general que ya existía. El código CSS original ya lo tengo, pero puedes pedírmelo si lo necesitas. En caso de no tenerlo, genera uno coherente con la descripción visual.
-
-Genera el código ahora.
