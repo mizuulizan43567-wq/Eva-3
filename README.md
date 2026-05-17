@@ -1,7 +1,7 @@
 # Eva-3
 v1.4
 
-Quiero que actúes como un desarrollador frontend experto. Necesito que generes el código completo de una página web para una vulcanizadora llamada "Vulcanización Don Miguel". El proyecto debe cumplir con los siguientes requisitos técnicos y de diseño, **respetando exactamente el estilo visual original** que se describe abajo.
+Quiero que actúes como un desarrollador frontend senior. Necesito que generes el código completo de una página web para una vulcanizadora llamada "Vulcanización Don Miguel". El proyecto debe cumplir con los siguientes requisitos técnicos y de diseño, **respetando exactamente el estilo visual original** que se describe abajo.
 
 ## Requisitos funcionales y técnicos
 
